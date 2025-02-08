@@ -23,6 +23,11 @@ on:
         type: string
         default: track_data
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 # Allow one concurrent deployment
 concurrency:
   group: 'pages'
@@ -38,9 +43,8 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pages: write
       id-token: write
+      pages: write
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -48,9 +52,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           # if your default branches is not master, please change it here
-          ref: master
-          fetch-depth: 0
-          persist-credentials: false 
+          ref: main
 
       - name: Cache Data Files
         if: inputs.save_data_in_github_cache
@@ -94,9 +96,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Build
-        env:
-          REPO_NAME: ${{ github.event.repository.name }}
-        run: PATH_PREFIX=/$REPO_NAME pnpm build
+        run: PATH_PREFIX=/${{ github.event.repository.name }} pnpm build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -109,3 +109,4 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           artifact_name: pages-artifact
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }} 
