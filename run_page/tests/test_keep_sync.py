@@ -103,6 +103,28 @@ class KeepSyncTests(unittest.TestCase):
         self.assertEqual(track.id, 9223370288715359807)
         self.assertEqual(track.external_id, "9223370288715359807")
 
+    def test_point_timestamps_interpolates_missing_values(self):
+        points = [
+            {"timestamp": 100},
+            {},
+            {"timestamp": 300},
+            {},
+        ]
+
+        self.assertEqual(keep_sync.point_timestamps(points), [100, 200, 300, 310])
+
+    def test_gpx_export_handles_empty_and_untimed_points(self):
+        self.assertEqual(keep_sync.parse_points_to_gpx([], 0, "Run"), "")
+
+        points = [
+            {"latitude": 30.5, "longitude": 104.0},
+            {"latitude": 30.6, "longitude": 104.1},
+        ]
+        gpx = keep_sync.parse_points_to_gpx(points, 1_700_000_000_000, "Run")
+
+        self.assertIn("<trkpt", gpx)
+        self.assertEqual(gpx.count("<trkpt"), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

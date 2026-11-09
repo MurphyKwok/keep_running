@@ -167,7 +167,7 @@ def parse_raw_data_to_nametuple(
             p_hr = find_nearest_hr(decoded_hr_data, int(p["timestamp"]), start_time)
             if p_hr:
                 p["hr"] = p_hr
-        if with_download_gpx:
+        if with_download_gpx and run_points_data_gpx:
             if str(keep_id) not in old_gpx_ids and run_data["dataType"].startswith(
                 "outdoor"
             ):
@@ -253,6 +253,31 @@ def get_all_keep_tracks(
     return tracks
 
 
+def point_timestamps(run_points_data):
+    """Fill missing per-point timestamps so GPX export survives partial data."""
+    raw = [point.get("timestamp") for point in run_points_data]
+    known = [(index, value) for index, value in enumerate(raw) if value is not None]
+    if not known:
+        return [index * 10 for index in range(len(raw))]
+
+    filled = list(raw)
+    for index, value in enumerate(raw):
+        if value is not None:
+            continue
+        before = next((item for item in reversed(known) if item[0] < index), None)
+        after = next((item for item in known if item[0] > index), None)
+        if before and after:
+            left_index, left_value = before
+            right_index, right_value = after
+            ratio = (index - left_index) / (right_index - left_index)
+            filled[index] = round(left_value + (right_value - left_value) * ratio)
+        elif before:
+            filled[index] = before[1] + (index - before[0]) * 10
+        else:
+            filled[index] = after[1] - (after[0] - index) * 10
+    return filled
+
+
 def parse_points_to_gpx(run_points_data, start_time, sport_type):
     """
     Convert run points data to GPX format.
@@ -266,17 +291,27 @@ def parse_points_to_gpx(run_points_data, start_time, sport_type):
         gpx_data (str): GPX data in string format.
     """
     points_dict_list = []
-    # early timestamp fields in keep's data stands for delta time, but in newly data timestamp field stands for exactly time,
-    # so it does'nt need to plus extra start_time
-    if run_points_data[0]["timestamp"] > TIMESTAMP_THRESHOLD_IN_DECISECOND:
+    if not run_points_data:
+        return ""
+
+    # Early timestamp fields in Keep's data stand for delta time, while in
+    # newer data the timestamp field stands for exactly time, so it does not
+    # need the extra start_time.
+    known_timestamps = [
+        point.get("timestamp")
+        for point in run_points_data
+        if point.get("timestamp") is not None
+    ]
+    if known_timestamps and max(known_timestamps) > TIMESTAMP_THRESHOLD_IN_DECISECOND:
         start_time = 0
 
-    for point in run_points_data:
+    timestamps = point_timestamps(run_points_data)
+    for point, point_time in zip(run_points_data, timestamps):
         points_dict = {
             "latitude": point["latitude"],
             "longitude": point["longitude"],
             "time": datetime.fromtimestamp(
-                (point["timestamp"] * 100 + start_time)
+                (point_time * 100 + start_time)
                 / 1000,  # note that the timestamp of a point is decisecond(分秒)
                 tz=timezone.utc,
             ),
