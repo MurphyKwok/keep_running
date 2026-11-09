@@ -122,7 +122,7 @@ class KeepAuditComparisonTests(unittest.TestCase):
         activity = types.SimpleNamespace(
             run_id=float("9223370281897076000"),
             external_id=None,
-            start_date="2025-08-12 00:07:01",
+            start_date="2025-08-12 02:07:01",
             distance=1229.1887,
         )
         summary = {

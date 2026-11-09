@@ -66,6 +66,41 @@ def activity_start_text(value):
     return str(value or "").replace("T", " ")[:19]
 
 
+def parse_utc_text(value):
+    try:
+        return datetime.strptime(activity_start_text(value), "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return None
+
+
+def match_by_tolerance(activities, start, distance):
+    """Match rows whose exported distance or time differs slightly from Keep."""
+    target_time = parse_utc_text(start)
+    distance_limit = max(2.0, abs(distance) * 0.005)
+    close = [
+        activity
+        for activity in activities
+        if abs(float(activity.distance or 0) - distance) <= distance_limit
+    ]
+    if not close:
+        return None
+
+    timed = []
+    if target_time:
+        for activity in close:
+            activity_time = parse_utc_text(activity.start_date)
+            if (
+                activity_time
+                and abs((activity_time - target_time).total_seconds()) <= 120
+            ):
+                timed.append(activity)
+    if len(timed) == 1:
+        return timed[0]
+    if len(close) == 1:
+        return close[0]
+    return None
+
+
 def compare_activities(summaries, activities):
     by_external_id = {a.external_id: a for a in activities if a.external_id}
     by_rounded_id = {int(float(a.external_id)): a for a in activities if a.external_id}
@@ -110,6 +145,11 @@ def compare_activities(summaries, activities):
                 pass
             if activity:
                 match_type = "javascript_rounded_id"
+
+        if not activity:
+            activity = match_by_tolerance(activities, start, distance)
+            if activity:
+                match_type = "tolerant_start_distance"
 
         record = {
             "id": raw_id,
