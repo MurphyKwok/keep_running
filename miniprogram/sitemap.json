@@ -1,0 +1,9 @@
+{
+  "desc": "MurphyKwok 的跑步数据",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

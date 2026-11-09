@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/run/run"
+  ],
+  "window": {
+    "navigationBarTitleText": "MurphyKwok 的跑步数据",
+    "navigationBarBackgroundColor": "#101010",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#101010",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

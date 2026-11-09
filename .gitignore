@@ -23,3 +23,6 @@ config.yaml
 
 # Keep audit output
 keep-audit.json
+
+# WeChat DevTools per-machine settings
+miniprogram/project.private.config.json

@@ -1,0 +1,87 @@
+<view wx:if="{{notFound}}" class="not-found">
+  <text class="not-found-code">404</text>
+  <text class="not-found-title">没有找到这条跑步记录</text>
+  <button class="back-button" bindtap="goBack">返回跑步首页</button>
+</view>
+
+<view wx:elif="{{activity}}" class="page detail-page">
+  <view class="detail-head">
+    <text class="detail-kicker">RUN DETAIL</text>
+    <text class="detail-date">{{activity.date}}</text>
+    <text class="detail-city">{{activity.city}}</text>
+    <view class="distance-lockup">
+      <text class="distance-value">{{activity.distance}}</text>
+      <text class="distance-unit">km</text>
+    </view>
+  </view>
+
+  <view class="map-card">
+    <map
+      wx:if="{{map.available}}"
+      class="detail-map"
+      latitude="{{map.latitude}}"
+      longitude="{{map.longitude}}"
+      scale="{{map.scale}}"
+      polylines="{{map.polylines}}"
+      enable-scroll
+      enable-zoom
+      show-location="{{false}}"
+    ></map>
+    <view wx:else class="detail-map-empty">
+      <text class="empty-route">⌁</text>
+      <text>Keep 没有为这次跑步保存 GPS 轨迹</text>
+    </view>
+    <view class="track-badge">
+      <text>{{activity.hasTrack ? 'TRACK READY' : 'NO TRACK'}}</text>
+      <text wx:if="{{activity.hasTrack}}">{{activity.gpsPoints}} POINTS</text>
+    </view>
+  </view>
+
+  <view class="metric-grid">
+    <view class="metric-cell metric-featured">
+      <text class="metric-label">平均配速</text>
+      <text class="metric-value">{{activity.pace}}</text>
+      <text class="metric-unit">/km</text>
+    </view>
+    <view class="metric-cell">
+      <text class="metric-label">用时</text>
+      <text class="metric-value">{{activity.duration}}</text>
+    </view>
+    <view class="metric-cell">
+      <text class="metric-label">平均心率</text>
+      <text class="metric-value">{{activity.heart}}</text>
+      <text class="metric-unit">bpm</text>
+    </view>
+    <view class="metric-cell">
+      <text class="metric-label">热量</text>
+      <text class="metric-value">{{activity.calories}}</text>
+      <text class="metric-unit">kcal</text>
+    </view>
+    <view class="metric-cell">
+      <text class="metric-label">平均步频</text>
+      <text class="metric-value">{{activity.cadence}}</text>
+      <text class="metric-unit">spm</text>
+    </view>
+    <view class="metric-cell">
+      <text class="metric-label">步数</text>
+      <text class="metric-value">{{activity.steps}}</text>
+    </view>
+  </view>
+
+  <view class="data-panel">
+    <view class="data-row">
+      <text class="data-label">数据来源</text>
+      <text class="data-value">Keep</text>
+    </view>
+    <view class="data-row">
+      <text class="data-label">轨迹格式</text>
+      <text class="data-value">Encoded Polyline</text>
+    </view>
+    <view class="data-row">
+      <text class="data-label">轨迹点数</text>
+      <text class="data-value">{{activity.gpsPoints}}</text>
+    </view>
+  </view>
+
+  <text class="detail-note">Keep 聚合数据未提供的指标会显示为 “--”。导入华为运动健康前，请保留原始导出文件以保留全部可用数据。</text>
+</view>

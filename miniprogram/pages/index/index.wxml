@@ -1,0 +1,121 @@
+<view class="page home-page">
+  <view class="topbar">
+    <view class="brand-mark">MR</view>
+    <view class="brand-copy">
+      <text class="brand-title">MurphyKwok</text>
+      <text class="brand-subtitle">RUNNING ARCHIVE</text>
+    </view>
+    <text class="archive-count">{{totalCount}} RUNS</text>
+  </view>
+
+  <view class="hero">
+    <text class="eyebrow">{{selectedLabel}} 年度数据</text>
+    <view class="hero-distance">
+      <text class="hero-value">{{stats.distance}}</text>
+      <text class="hero-unit">km</text>
+    </view>
+    <text class="hero-caption">每一次落脚，都成为一条可回看的轨迹。</text>
+  </view>
+
+  <scroll-view class="year-scroll" scroll-x enable-flex show-scrollbar="{{false}}">
+    <view class="year-row">
+      <view
+        wx:for="{{yearTabs}}"
+        wx:key="value"
+        class="year-chip {{selectedYear === item.value ? 'year-chip-active' : ''}}"
+        data-year="{{item.value}}"
+        bindtap="onYearTap"
+      >
+        <text>{{item.label}}</text>
+        <text class="year-count">{{item.count}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="stats-grid">
+    <view class="stat-cell">
+      <text class="stat-value">{{stats.runs}}</text>
+      <text class="stat-label">跑步次数</text>
+    </view>
+    <view class="stat-cell">
+      <text class="stat-value">{{stats.distance}}</text>
+      <text class="stat-label">总公里</text>
+    </view>
+    <view class="stat-cell">
+      <text class="stat-value">{{stats.pace}}</text>
+      <text class="stat-label">平均配速 /km</text>
+    </view>
+    <view class="stat-cell">
+      <text class="stat-value">{{stats.heart}}</text>
+      <text class="stat-label">平均心率 bpm</text>
+    </view>
+  </view>
+
+  <view class="section-head">
+    <view>
+      <text class="section-kicker">ROUTE ATLAS</text>
+      <text class="section-title">年度轨迹</text>
+    </view>
+    <text class="section-note">{{map.caption}}</text>
+  </view>
+
+  <view class="map-shell">
+    <map
+      wx:if="{{map.available}}"
+      class="run-map"
+      latitude="{{map.latitude}}"
+      longitude="{{map.longitude}}"
+      scale="{{map.scale}}"
+      polylines="{{map.polylines}}"
+      enable-scroll
+      enable-zoom
+      show-location="{{false}}"
+    ></map>
+    <view wx:else class="map-empty">
+      <text class="empty-icon">⌁</text>
+      <text>这个年份没有可展示的 GPS 轨迹</text>
+    </view>
+    <view class="map-badge"><text>LOCAL GPS DATA</text></view>
+  </view>
+
+  <view class="section-head recent-head">
+    <view>
+      <text class="section-kicker">RUN LOG</text>
+      <text class="section-title">最近跑步</text>
+    </view>
+    <text class="section-note">{{visibleCount}} / {{totalCount}}</text>
+  </view>
+
+  <view class="run-list">
+    <view
+      wx:for="{{recent}}"
+      wx:key="id"
+      class="run-card"
+      data-id="{{item.id}}"
+      bindtap="onRunTap"
+      hover-class="run-card-hover"
+    >
+      <view class="run-main">
+        <text class="run-date">{{item.date}}</text>
+        <text class="run-city">{{item.city}}</text>
+      </view>
+      <view class="run-distance">
+        <text class="run-distance-value">{{item.distance}}</text>
+        <text class="run-distance-unit">km</text>
+      </view>
+      <view class="run-meta">
+        <text>{{item.pace}} /km</text>
+        <text>{{item.duration}}</text>
+        <text wx:if="{{item.hasTrack}}" class="gps-tag">GPS</text>
+        <text wx:else class="gps-tag gps-tag-off">NO GPS</text>
+      </view>
+      <text class="run-heart">{{item.heart}} bpm</text>
+      <text class="run-chevron">›</text>
+    </view>
+  </view>
+
+  <button wx:if="{{hasMore}}" class="more-button" bindtap="loadMore">加载更多</button>
+  <text wx:else class="list-end">— 已经到底了 —</text>
+
+  <text class="data-note">数据来自 Keep，轨迹与统计均打包在本地小程序中。</text>
+</view>
