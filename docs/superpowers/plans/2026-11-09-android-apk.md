@@ -1,6 +1,6 @@
 # MurphyKwok Running Page Android APK Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build and verify an Android WebView APK that loads the latest Running Page online and falls back to a bundled snapshot offline.
 
@@ -32,7 +32,7 @@
 - Produces: `copySnapshot(sourceDir, targetDir) -> void`
 - Produces npm scripts `android:prepare` and `test:android`.
 
-- [ ] **Step 1: Write the failing snapshot test**
+- [x] **Step 1: Write the failing snapshot test**
 
 ```js
 const assert = require('node:assert/strict');
@@ -45,17 +45,17 @@ test('replaces the Android snapshot without stale assets', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 Run: `node --test tests/android/snapshot.test.cjs`
 
 Expected: FAIL because `scripts/build-android-snapshot.mjs` does not exist.
 
-- [ ] **Step 3: Implement the snapshot helper**
+- [x] **Step 3: Implement the snapshot helper**
 
 The CLI runs the local Vite binary through the current Node executable with `PATH_PREFIX=/assets/public/`. `copySnapshot` removes the destination directory and recursively copies `dist` into `android/app/src/main/assets/public`.
 
-- [ ] **Step 4: Run the test and verify GREEN**
+- [x] **Step 4: Run the test and verify GREEN**
 
 Run: `node --test tests/android/snapshot.test.cjs`
 
@@ -76,7 +76,7 @@ Expected: PASS.
 - Produces: `NavigationPolicy.isLocalSnapshot(String url) -> boolean`
 - Produces: `NavigationPolicy.isExternalWeb(String url) -> boolean`
 
-- [ ] **Step 1: Write failing JVM tests**
+- [x] **Step 1: Write failing JVM tests**
 
 Create the minimal Gradle configuration first so the test task can run. It should use application ID `io.github.murphykwok.keeprunning`, version code 1, version name `1.0.0`, AGP 8.7.3, JUnit 4, and API 35.
 
@@ -88,17 +88,17 @@ assertFalse(NavigationPolicy.isExternalWeb("javascript:alert(1)"));
 assertFalse(NavigationPolicy.isExternalWeb("http://murphykwok.github.io/keep_running/"));
 ```
 
-- [ ] **Step 2: Run the tests and verify RED**
+- [x] **Step 2: Run the tests and verify RED**
 
 Run: `gradle -p android testDebugUnitTest`
 
 Expected: FAIL because `NavigationPolicy` does not exist and the Android project is not yet scaffolded.
 
-- [ ] **Step 3: Implement policy using `java.net.URI`**
+- [x] **Step 3: Implement policy using `java.net.URI`**
 
 Allow only HTTPS for the exact Running Page origin and required path prefix. Treat HTTP and HTTPS as external browser links, and reject all other schemes.
 
-- [ ] **Step 4: Run the tests and verify GREEN**
+- [x] **Step 4: Run the tests and verify GREEN**
 
 Run: `gradle -p android testDebugUnitTest`
 
@@ -120,19 +120,19 @@ Expected: BUILD SUCCESSFUL.
 - Consumes: `assets/public/index.html` from Task 1.
 - Produces: installable debug APK at `android/app/build/outputs/apk/debug/app-debug.apk`.
 
-- [ ] **Step 1: Add the WebKit dependency and application resources**
+- [x] **Step 1: Add the WebKit dependency and application resources**
 
 Add `androidx.webkit:webkit:1.12.1` to serve the local snapshot through an HTTPS asset origin. Add the manifest, app name, themes, network security configuration, and launcher icon.
 
-- [ ] **Step 2: Implement the WebView activity**
+- [x] **Step 2: Implement the WebView activity**
 
 Configure JavaScript, DOM storage, no mixed content, no file/content access, TLS-error cancellation, network detection, online no-cache loading, one-time offline fallback, external-link handling, back navigation, system-bar insets, and a native loading overlay. Serve `/assets/public/` as `assets/public/index.html` so the browser router receives the expected base path.
 
-- [ ] **Step 3: Add the dark app theme and launcher icon**
+- [x] **Step 3: Add the dark app theme and launcher icon**
 
 Use `#10110F` for system surfaces and `#D9F42B` for the accent. Generate launcher densities from `public/images/favicon.png`.
 
-- [ ] **Step 4: Run Android unit tests and assemble the APK**
+- [x] **Step 4: Run Android unit tests and assemble the APK**
 
 Run: `node scripts/build-android-snapshot.mjs && gradle -p android testDebugUnitTest assembleDebug`
 
@@ -148,19 +148,19 @@ Expected: tests pass and `app-debug.apk` exists.
 **Interfaces:**
 - Produces workflow artifact `keep-running-debug-apk` containing `app-debug.apk`.
 
-- [ ] **Step 1: Add the APK workflow**
+- [x] **Step 1: Add the APK workflow**
 
 Support `workflow_dispatch` and `apk-v*` tags. Check out the repository, install Node 20 and pnpm, prepare the snapshot, install Temurin Java 17, set up Gradle, run `testDebugUnitTest assembleDebug`, and upload the APK artifact.
 
-- [ ] **Step 2: Document local building and installation**
+- [x] **Step 2: Document local building and installation**
 
 Document the online-first/offline-fallback behavior, the snapshots' map-tile limitation, local build commands, GitHub Actions artifact, and debug-signing update limitation.
 
-- [ ] **Step 3: Ignore generated Android and snapshot files**
+- [x] **Step 3: Ignore generated Android and snapshot files**
 
 Ignore `android/.gradle/`, `android/**/build/`, and `android/app/src/main/assets/public/`.
 
-- [ ] **Step 4: Validate repository checks**
+- [x] **Step 4: Validate repository checks**
 
 Run: `node --test tests/android/snapshot.test.cjs tests/miniprogram/coords.test.cjs`
 
@@ -178,15 +178,15 @@ Expected: all commands pass.
 **Interfaces:**
 - Produces a downloadable APK artifact for the user.
 
-- [ ] **Step 1: Run the APK workflow**
+- [x] **Step 1: Run the APK workflow**
 
 Push the implementation and run `.github/workflows/android-apk.yml` through its `apk-v1.0.0` tag or manual dispatch.
 
-- [ ] **Step 2: Verify the workflow build**
+- [x] **Step 2: Verify the workflow build**
 
 Expected: `testDebugUnitTest` and `assembleDebug` succeed, and `keep-running-debug-apk` is uploaded.
 
-- [ ] **Step 3: Download and inspect the APK**
+- [x] **Step 3: Download and inspect the APK**
 
 Run: `unzip -l app-debug.apk | rg 'classes.dex|AndroidManifest.xml|assets/public/index.html'`
 
