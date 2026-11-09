@@ -1,11 +1,10 @@
 {
-  "name": "yihong.run",
-  "description": "Yi hong",
+  "name": "murphykwok-running-page",
+  "description": "MurphyKwok 的个人跑步数据归档与可视化",
   "version": "1.0.0",
-  "author": "Yi Hong <zouzou0208@gmail.com>",
+  "author": "MurphyKwok",
   "packageManager": "pnpm@8.9.0+sha256.8f5264ad1d100da11a6add6bb8a94c6f1e913f9e9261b2a551fabefad2ec0fec",
   "dependencies": {
-    "@mapbox/mapbox-gl-language": "^1.0.0",
     "@mapbox/polyline": "^1.1.1",
     "@surbowl/world-geo-json-zh": "^2.1.3",
     "@svgr/plugin-svgo": "^8.1.0",
@@ -13,7 +12,7 @@
     "@vitejs/plugin-react": "^4.0.0",
     "gcoord": "^0.3.2",
     "geojson": "^0.5.0",
-    "mapbox-gl": "^2.8.2",
+    "maplibre-gl": "3.6.2",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -47,7 +46,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yihong0618/running_page"
+    "url": "https://github.com/MurphyKwok/keep_running"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.14",

@@ -20,3 +20,6 @@ _site/
 
 config.yaml
 .venv/
+
+# Keep audit output
+keep-audit.json

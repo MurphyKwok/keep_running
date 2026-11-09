@@ -50,7 +50,9 @@ def login(session, mobile, password):
         return session, headers
 
 
-def get_to_download_runs_ids(session, headers, sport_type):
+def get_to_download_runs_ids(
+    session, headers, sport_type, include_doubtful=False
+):
     last_date = 0
     result = []
 
@@ -64,7 +66,11 @@ def get_to_download_runs_ids(session, headers, sport_type):
 
             for i in run_logs:
                 logs = [j["stats"] for j in i["logs"]]
-                result.extend(k["id"] for k in logs if not k["isDoubtful"])
+                result.extend(
+                    k["id"]
+                    for k in logs
+                    if include_doubtful or not k.get("isDoubtful", False)
+                )
             last_date = r.json()["data"]["lastTimestamp"]
             since_time = datetime.fromtimestamp(last_date / 1000, tz=timezone.utc)
             print(f"pares keep ids data since {since_time}")
@@ -72,6 +78,24 @@ def get_to_download_runs_ids(session, headers, sport_type):
             if not last_date:
                 break
     return result
+
+
+def effective_duration_seconds(run_data):
+    """Return a positive Keep duration, falling back to start/end timestamps."""
+    try:
+        duration = int(run_data.get("duration") or 0)
+    except (TypeError, ValueError):
+        duration = 0
+
+    if duration > 0:
+        return duration
+
+    try:
+        elapsed_ms = int(run_data["endTime"]) - int(run_data["startTime"])
+    except (KeyError, TypeError, ValueError):
+        return 0
+
+    return max(0, elapsed_ms // 1000)
 
 
 def get_single_run_data(session, headers, run_id, sport_type):
@@ -151,11 +175,13 @@ def parse_raw_data_to_nametuple(
     start_date_local = adjust_time(start_date, tz_name)
     end = datetime.fromtimestamp(run_data["endTime"] / 1000, tz=timezone.utc)
     end_local = adjust_time(end, tz_name)
-    if not run_data["duration"]:
+    duration = effective_duration_seconds(run_data)
+    if not duration:
         print(f"ID {keep_id} has no total time just ignore please check")
         return
     d = {
         "id": int(keep_id),
+        "external_id": keep_id,
         "name": f"{KEEP2STRAVA[run_data['dataType']]} from keep",
         # future to support others workout now only for run
         "type": f"{KEEP2STRAVA[(run_data['dataType'])]}",
@@ -169,18 +195,23 @@ def parse_raw_data_to_nametuple(
         "map": run_map(polyline_str),
         "start_latlng": start_latlng,
         "distance": run_data["distance"],
-        "moving_time": timedelta(seconds=run_data["duration"]),
+        "moving_time": timedelta(seconds=duration),
         "elapsed_time": timedelta(
             seconds=int((run_data["endTime"] - run_data["startTime"]) / 1000)
         ),
-        "average_speed": run_data["distance"] / run_data["duration"],
+        "average_speed": run_data["distance"] / duration,
         "location_country": str(run_data.get("region", "")),
     }
     return namedtuple("x", d.keys())(*d.values())
 
 
 def get_all_keep_tracks(
-    email, password, old_tracks_ids, keep_sports_data_api, with_download_gpx=False
+    email,
+    password,
+    old_tracks_ids,
+    keep_sports_data_api,
+    with_download_gpx=False,
+    include_doubtful=True,
 ):
     if with_download_gpx and not os.path.exists(GPX_FOLDER):
         os.mkdir(GPX_FOLDER)
@@ -188,7 +219,9 @@ def get_all_keep_tracks(
     s, headers = login(s, email, password)
     tracks = []
     for api in keep_sports_data_api:
-        runs = get_to_download_runs_ids(s, headers, api)
+        runs = get_to_download_runs_ids(
+            s, headers, api, include_doubtful=include_doubtful
+        )
         runs = [run for run in runs if run.split("_")[1] not in old_tracks_ids]
         print(f"{len(runs)} new keep {api} data to generate")
         old_gpx_ids = os.listdir(GPX_FOLDER)
@@ -200,7 +233,8 @@ def get_all_keep_tracks(
                 track = parse_raw_data_to_nametuple(
                     run_data, old_gpx_ids, s, with_download_gpx
                 )
-                tracks.append(track)
+                if track is not None:
+                    tracks.append(track)
             except Exception as e:
                 print(f"Something wrong paring keep id {run}" + str(e))
     return tracks
@@ -321,11 +355,22 @@ def download_keep_gpx(gpx_data, keep_id):
         pass
 
 
-def run_keep_sync(email, password, keep_sports_data_api, with_download_gpx=False):
+def run_keep_sync(
+    email,
+    password,
+    keep_sports_data_api,
+    with_download_gpx=False,
+    include_doubtful=True,
+):
     generator = Generator(SQL_FILE)
     old_tracks_ids = generator.get_old_tracks_ids()
     new_tracks = get_all_keep_tracks(
-        email, password, old_tracks_ids, keep_sports_data_api, with_download_gpx
+        email,
+        password,
+        old_tracks_ids,
+        keep_sports_data_api,
+        with_download_gpx,
+        include_doubtful,
     )
     generator.sync_from_app(new_tracks)
 
@@ -351,11 +396,20 @@ if __name__ == "__main__":
         action="store_true",
         help="get all keep data to gpx and download",
     )
+    parser.add_argument(
+        "--exclude-doubtful",
+        action="store_true",
+        help="skip activities that Keep marks as doubtful; complete sync includes them by default",
+    )
     options = parser.parse_args()
     for _tpye in options.sync_types:
         assert (
             _tpye in KEEP_SPORT_TYPES
         ), f"{_tpye} are not supported type, please make sure that the type entered in the {KEEP_SPORT_TYPES}"
     run_keep_sync(
-        options.phone_number, options.password, options.sync_types, options.with_gpx
+        options.phone_number,
+        options.password,
+        options.sync_types,
+        options.with_gpx,
+        not options.exclude_doubtful,
     )

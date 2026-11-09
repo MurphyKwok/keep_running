@@ -1,0 +1,53 @@
+name: Keep Data Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: Calendar year to audit
+        required: true
+        default: '2025'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Restore synchronized data
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            assets
+            GPX_OUT
+            run_page/data.db
+            src/static/activities.json
+          key: keep-audit-${{ github.run_id }}
+          restore-keys: |
+            track_data-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Audit Keep history
+        env:
+          KEEP_MOBILE: ${{ secrets.KEEP_MOBILE }}
+          KEEP_PASSWORD: ${{ secrets.KEEP_PASSWORD }}
+        run: python run_page/keep_missing_audit.py --year "${{ inputs.year }}" --include-details --output keep-audit.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: keep-data-audit
+          path: keep-audit.json
+          if-no-files-found: warn

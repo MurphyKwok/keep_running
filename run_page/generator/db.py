@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     Interval,
     String,
+    func,
     create_engine,
     inspect,
     text,
@@ -52,6 +53,7 @@ class Activity(Base):
     __tablename__ = "activities"
 
     run_id = Column(Integer, primary_key=True)
+    external_id = Column(String, unique=True, index=True)
     name = Column(String)
     distance = Column(Float)
     moving_time = Column(Interval)
@@ -84,9 +86,30 @@ class Activity(Base):
 def update_or_create_activity(session, run_activity):
     created = False
     try:
+        external_id = getattr(run_activity, "external_id", None)
+        external_id = str(external_id) if external_id else None
         activity = (
             session.query(Activity).filter_by(run_id=int(run_activity.id)).first()
         )
+        if external_id:
+            activity = (
+                session.query(Activity).filter_by(external_id=external_id).first()
+                or activity
+            )
+
+        # Keep IDs are too large for JavaScript. Older imports stored only the
+        # rounded numeric ID, so adopt the exact external ID by matching the
+        # activity's stable start time and distance instead of adding a duplicate.
+        if external_id and not activity:
+            activity = (
+                session.query(Activity)
+                .filter(
+                    Activity.start_date_local == run_activity.start_date_local,
+                    func.abs(Activity.distance - float(run_activity.distance)) < 0.05,
+                )
+                .first()
+            )
+
         if not activity:
             start_point = run_activity.start_latlng
             location_country = getattr(run_activity, "location_country", "")
@@ -112,6 +135,7 @@ def update_or_create_activity(session, run_activity):
 
             activity = Activity(
                 run_id=run_activity.id,
+                external_id=external_id,
                 name=run_activity.name,
                 distance=run_activity.distance,
                 moving_time=run_activity.moving_time,
@@ -130,6 +154,8 @@ def update_or_create_activity(session, run_activity):
             session.add(activity)
             created = True
         else:
+            activity.run_id = int(run_activity.id)
+            activity.external_id = external_id or activity.external_id
             activity.name = run_activity.name
             activity.distance = float(run_activity.distance)
             activity.moving_time = run_activity.moving_time
@@ -168,6 +194,51 @@ def add_missing_columns(engine, model):
                 )
 
 
+def repair_legacy_intervals(engine):
+    """Upgrade time-only strings written by older/manual SQLite imports."""
+    with engine.begin() as conn:
+        for column in ("moving_time", "elapsed_time"):
+            rows = conn.execute(
+                text(
+                    f"SELECT rowid, {column} FROM activities "
+                    f"WHERE {column} IS NOT NULL"
+                )
+            )
+            for rowid, value in rows:
+                value = str(value)
+                parts = value.split(":")
+                if len(parts) != 3:
+                    continue
+                try:
+                    hours, minutes, seconds = (int(part) for part in parts)
+                except ValueError:
+                    continue
+                normalized = datetime.datetime(1970, 1, 1) + datetime.timedelta(
+                    hours=hours, minutes=minutes, seconds=seconds
+                )
+                conn.execute(
+                    text(
+                        f"UPDATE activities SET {column}=:value WHERE rowid=:rowid"
+                    ),
+                    {
+                        "value": normalized.strftime("%Y-%m-%d %H:%M:%S.%f"),
+                        "rowid": rowid,
+                    },
+                )
+
+
+def ensure_activity_indexes(engine):
+    """Create indexes that create_all cannot add to an existing table."""
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS "
+                "ix_activities_external_id ON activities(external_id) "
+                "WHERE external_id IS NOT NULL"
+            )
+        )
+
+
 def init_db(db_path):
     engine = create_engine(
         f"sqlite:///{db_path}", connect_args={"check_same_thread": False}
@@ -176,6 +247,8 @@ def init_db(db_path):
 
     # check missing columns
     add_missing_columns(engine, Activity)
+    ensure_activity_indexes(engine)
+    repair_legacy_intervals(engine)
 
     sm = sessionmaker(bind=engine)
     session = sm()

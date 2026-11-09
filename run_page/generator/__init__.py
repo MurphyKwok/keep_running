@@ -130,7 +130,7 @@ class Generator:
         # if sub_type is not in the db, just add an empty string to it
         activities = (
             self.session.query(Activity)
-            .filter(Activity.distance > 0.1)
+            .filter(Activity.distance > 0)
             .order_by(Activity.start_date_local)
         )
         activity_list = []
@@ -164,7 +164,7 @@ class Generator:
     def get_old_tracks_ids(self):
         try:
             activities = self.session.query(Activity).all()
-            return [str(a.run_id) for a in activities]
+            return [str(a.external_id or a.run_id) for a in activities]
         except Exception as e:
             # pass the error
             print(f"something wrong with {str(e)}")
