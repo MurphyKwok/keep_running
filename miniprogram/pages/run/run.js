@@ -20,8 +20,9 @@ function createMap(rawPolyline) {
   const box = bounds(points);
   const latSpan = box.maxLat - box.minLat;
   const lngSpan = box.maxLng - box.minLng;
-  const span = Math.max(latSpan, lngSpan, 0.001);
-  const scale = Math.max(4, Math.min(18, Math.round(Math.log(360 / span) / Math.LN2) - 1));
+  // Fit the track tightly so the line is always visible in the map card.
+  const span = Math.max(latSpan, lngSpan * 1.4, 0.0015);
+  const scale = Math.max(4, Math.min(16, Math.floor(Math.log(478 / span) / Math.LN2)));
   return {
     available: true,
     latitude: (box.minLat + box.maxLat) / 2,
@@ -31,7 +32,7 @@ function createMap(rawPolyline) {
       {
         points,
         color: '#d9f42b',
-        width: 6,
+        width: 8,
         dottedLine: false,
         arrowLine: false,
       },

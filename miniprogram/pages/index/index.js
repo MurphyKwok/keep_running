@@ -1,10 +1,10 @@
 const activities = require('../../data/activities');
-const { decode, simplify, bounds } = require('../../utils/polyline');
+const { decode, simplify } = require('../../utils/polyline');
 const { toSeconds, pace, duration, dateText } = require('../../utils/format');
 
 const PAGE_SIZE = 30;
 const MAP_TRACE_LIMIT = 120;
-const MAP_POINTS_PER_TRACE = 18;
+const MAP_POINTS_PER_TRACE = 32;
 const ACCENT = '#d9f42b';
 
 function normalize(activity) {
@@ -56,27 +56,45 @@ function rowForList(item) {
 
 function buildMap(items, yearLabel) {
   const traces = items.filter((item) => item.p).slice(0, MAP_TRACE_LIMIT);
-  const allPoints = [];
   const polylines = [];
+  const groups = {};
 
   traces.forEach((item) => {
     let points = decode(item.p);
     if (points.length < 2) {
       return;
     }
+    const city = item.c || '地点未记录';
+    let group = groups[city];
+    if (!group) {
+      group = {
+        name: city,
+        count: 0,
+        minLat: Infinity,
+        maxLat: -Infinity,
+        minLng: Infinity,
+        maxLng: -Infinity,
+      };
+      groups[city] = group;
+    }
+    group.count += 1;
+    points.forEach((point) => {
+      group.minLat = Math.min(group.minLat, point.latitude);
+      group.maxLat = Math.max(group.maxLat, point.latitude);
+      group.minLng = Math.min(group.minLng, point.longitude);
+      group.maxLng = Math.max(group.maxLng, point.longitude);
+    });
     points = simplify(points, MAP_POINTS_PER_TRACE);
-    allPoints.push(points[0], points[points.length - 1]);
     polylines.push({
       points,
       color: ACCENT,
-      width: 3,
+      width: 5,
       dottedLine: false,
       arrowLine: false,
     });
   });
 
-  const box = bounds(allPoints);
-  if (!box || !polylines.length) {
+  if (!polylines.length) {
     return {
       available: false,
       polylines: [],
@@ -87,13 +105,20 @@ function buildMap(items, yearLabel) {
     };
   }
 
+  // Focus on the city with the most runs. Fitting every continent at once
+  // shrinks a 10 km track to less than one pixel, which looks like a blank map.
+  const focus = Object.keys(groups)
+    .map((key) => groups[key])
+    .sort((a, b) => b.count - a.count)[0];
+  const box = focus;
   const latSpan = box.maxLat - box.minLat;
   const lngSpan = box.maxLng - box.minLng;
-  const span = Math.max(latSpan, lngSpan, 0.001);
-  const scale = Math.max(3, Math.min(16, Math.round(Math.log(360 / span) / Math.LN2) - 1));
+  const span = Math.max(latSpan, lngSpan * 1.4, 0.0015);
+  const scale = Math.max(4, Math.min(15, Math.floor(Math.log(478 / span) / Math.LN2)));
   const totalWithTrack = items.filter((item) => item.p).length;
   const shown = polylines.length;
   const suffix = shown < totalWithTrack ? `（显示最近 ${shown} 条）` : '';
+  const focusNote = focus.count < shown ? ` · 聚焦${focus.name}` : '';
 
   return {
     available: true,
@@ -101,7 +126,7 @@ function buildMap(items, yearLabel) {
     latitude: (box.minLat + box.maxLat) / 2,
     longitude: (box.minLng + box.maxLng) / 2,
     scale,
-    caption: `${yearLabel} · ${totalWithTrack} 条 GPS 轨迹${suffix}`,
+    caption: `${yearLabel} · ${totalWithTrack} 条 GPS 轨迹${suffix}${focusNote}`,
   };
 }
 
