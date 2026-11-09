@@ -87,12 +87,16 @@ def _distance_to_segment(point, start, end):
     ax, ay = start
     bx, by = end
     if ax == bx and ay == by:
-        return math.hypot(px - ax, py - ay)
+        return round(math.hypot(px - ax, py - ay), 6)
     dx = bx - ax
     dy = by - ay
     ratio = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)
     ratio = max(0.0, min(1.0, ratio))
-    return math.hypot(px - (ax + ratio * dx), py - (ay + ratio * dy))
+    distance = math.hypot(px - (ax + ratio * dx), py - (ay + ratio * dy))
+    # Keep Douglas-Peucker decisions stable across macOS/Python and the Linux
+    # GitHub Actions runner. Points that sit almost exactly on the tolerance
+    # boundary must not produce different bundles on each platform.
+    return round(distance, 6)
 
 
 def simplify_points(points, tolerance_meters):
@@ -100,9 +104,14 @@ def simplify_points(points, tolerance_meters):
     if tolerance_meters <= 0 or len(points) < 3:
         return list(points)
     reference = sum(latitude for latitude, _ in points) / len(points)
-    longitude_scale = math.cos(math.radians(reference)) * METERS_PER_DEGREE
+    longitude_scale = round(
+        math.cos(math.radians(reference)) * METERS_PER_DEGREE, 3
+    )
     projected = [
-        (longitude * longitude_scale, latitude * METERS_PER_DEGREE)
+        (
+            round(longitude * longitude_scale, 6),
+            round(latitude * METERS_PER_DEGREE, 6),
+        )
         for latitude, longitude in points
     ]
     last_index = len(points) - 1

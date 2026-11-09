@@ -66,7 +66,7 @@
       latitude="{{map.latitude}}"
       longitude="{{map.longitude}}"
       scale="{{map.scale}}"
-      polylines="{{map.polylines}}"
+      polyline="{{map.polylines}}"
       enable-scroll
       enable-zoom
       show-location="{{false}}"

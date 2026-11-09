@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: miniprogram-data-sync
@@ -16,6 +18,8 @@ jobs:
   sync:
     name: Refresh bundled data
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
 
@@ -64,9 +68,11 @@ jobs:
         run: python run_page/generate_miniprogram_data.py
 
       - name: Commit refreshed data
+        id: commit
         run: |
           if git diff --quiet -- src/static/activities.json miniprogram/data/activities.js; then
             echo "Mini program data is already up to date."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name "github-actions[bot]"
@@ -74,3 +80,14 @@ jobs:
           git add src/static/activities.json miniprogram/data/activities.js
           git commit -m "Sync mini program data from Keep"
           git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  deploy-page:
+    name: Publish refreshed Running Page
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    uses: ./.github/workflows/gh-pages.yml
+    with:
+      save_data_in_github_cache: false
+      data_cache_prefix: track_data
+    secrets: inherit
