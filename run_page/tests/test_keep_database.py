@@ -10,7 +10,6 @@ import types
 from run_page.generator import Generator
 from run_page.generator.db import Activity, update_or_create_activity
 
-
 RunMap = namedtuple("RunMap", "summary_polyline")
 StartPoint = namedtuple("StartPoint", "lat lon")
 
