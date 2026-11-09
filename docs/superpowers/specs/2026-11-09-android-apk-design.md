@@ -17,7 +17,7 @@ Provide an installable Android APK for the existing MurphyKwok Running Page. The
 The APK is a small native Java WebView shell under `android/`. It contains no separate copy of the Keep synchronization code. The same React/Vite application is built twice for its two hosting targets:
 
 - GitHub Pages continues to build with its repository path prefix.
-- The APK build uses `/assets/public/` and is served by `WebViewAssetLoader` at `https://appassets.androidplatform.net/assets/public/index.html`.
+- The APK build uses `/assets/public/` and is served by `WebViewAssetLoader` at `https://appassets.androidplatform.net/assets/public/`. A directory-index path handler resolves that URL to `assets/public/index.html` so the existing router sees `/assets/public/` rather than `/assets/public/index.html`.
 
 This asset-loader URL gives the local bundle an HTTPS origin and a normal path, so the existing browser router works without maintaining a separate application implementation or changing the website to hash routing.
 

@@ -14,7 +14,7 @@
 - App label is exactly `MurphyKwok 跑步数据`.
 - Minimum Android API is 23; compile and target SDK are 35.
 - Online URL is exactly `https://murphykwok.github.io/keep_running/`.
-- Local snapshot URL is exactly `https://appassets.androidplatform.net/assets/public/index.html`.
+- Local snapshot URL is exactly `https://appassets.androidplatform.net/assets/public/`.
 - Cleartext network traffic and TLS certificate bypass are prohibited.
 - Existing Keep data remains the single source of truth; do not duplicate or modify activity generation.
 
@@ -82,7 +82,7 @@ Create the minimal Gradle configuration first so the test task can run. It shoul
 
 ```java
 assertTrue(NavigationPolicy.isRunningPage("https://murphykwok.github.io/keep_running/"));
-assertTrue(NavigationPolicy.isLocalSnapshot("https://appassets.androidplatform.net/assets/public/index.html"));
+assertTrue(NavigationPolicy.isLocalSnapshot("https://appassets.androidplatform.net/assets/public/"));
 assertTrue(NavigationPolicy.isExternalWeb("https://github.com/MurphyKwok/keep_running"));
 assertFalse(NavigationPolicy.isExternalWeb("javascript:alert(1)"));
 assertFalse(NavigationPolicy.isExternalWeb("http://murphykwok.github.io/keep_running/"));
@@ -126,7 +126,7 @@ Add `androidx.webkit:webkit:1.12.1` to serve the local snapshot through an HTTPS
 
 - [ ] **Step 2: Implement the WebView activity**
 
-Configure JavaScript, DOM storage, no mixed content, no file/content access, TLS-error cancellation, network detection, online no-cache loading, one-time offline fallback, external-link handling, back navigation, system-bar insets, and a native loading overlay.
+Configure JavaScript, DOM storage, no mixed content, no file/content access, TLS-error cancellation, network detection, online no-cache loading, one-time offline fallback, external-link handling, back navigation, system-bar insets, and a native loading overlay. Serve `/assets/public/` as `assets/public/index.html` so the browser router receives the expected base path.
 
 - [ ] **Step 3: Add the dark app theme and launcher icon**
 

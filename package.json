@@ -29,6 +29,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "android:prepare": "node scripts/build-android-snapshot.mjs",
     "data:clean": "rm -f run_page/data.db {GPX,TCX,FIT}_OUT/* activities/* src/static/activities.json",
     "data:download:garmin": "python3 run_page/garmin_sync.py",
     "data:analysis": "python3 run_page/gen_svg.py --from-db --type github --output assets/github.svg",
@@ -37,7 +38,8 @@
     "serve": "vite serve",
     "lint": "eslint --ext .ts,.tsx src --fix",
     "check": "prettier --write src/main.tsx src/**/*.{css,json,ts,tsx} *.{md,yaml,json,ts,js}",
-    "ci": "pnpm run check && pnpm run lint && pnpm run build"
+    "ci": "pnpm run check && pnpm run lint && pnpm run build",
+    "test:android": "node --test tests/android/snapshot.test.cjs"
   },
   "engineStrict": true,
   "browserslist": "defaults, not ie 11",

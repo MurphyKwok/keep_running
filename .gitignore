@@ -26,3 +26,8 @@ keep-audit.json
 
 # WeChat DevTools per-machine settings
 miniprogram/project.private.config.json
+
+# Android build outputs and generated web snapshot
+android/.gradle/
+android/**/build/
+android/app/src/main/assets/public/

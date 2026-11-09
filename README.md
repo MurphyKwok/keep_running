@@ -1,5 +1,19 @@
 ## Note
 
+## Android APK
+
+The Android app opens <https://murphykwok.github.io/keep_running/> so normal Keep data updates appear without publishing a new APK. If the network or GitHub Pages is unavailable, it opens the web application and activity data bundled with the APK. The interactive OpenFreeMap basemap still requires a network connection.
+
+To build locally with JDK 17, Android SDK 35, and Gradle 8.9:
+
+```bash
+pnpm install
+pnpm android:prepare
+gradle -p android testDebugUnitTest assembleDebug
+```
+
+The installable file is `android/app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions also builds it through the `Build Android APK` workflow and uploads the `keep-running-debug-apk` artifact. A debug-signed APK can be installed directly by allowing installs from the browser or file manager. Later versions must use the same signing key to update it in place.
+
 1. clone or Fork before vercel 404 need to pull the latest code
 2. python3(python) in README means python3 python
 3. use v2.0 need change vercel setting from gatsby to vite
@@ -201,7 +215,7 @@ Open your browser and visit localhost:80
 
 ```typescript
 const MAPBOX_TOKEN =
-  'pk.eyJ1IjoieWlob25nMDYxOCIsImEiOiJja2J3M28xbG4wYzl0MzJxZm0ya2Fua2p2In0.PNKfkeQwYuyGOTT_x9BJ4Q';
+  'YOUR_MAPBOX_TOKEN';
 ```
 
 ## Custom your page

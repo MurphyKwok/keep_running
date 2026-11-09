@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MurphyKwok 跑步数据</string>
+    <string name="loading_title">MurphyKwok</string>
+    <string name="loading_subtitle">RUNNING ARCHIVE</string>
+    <string name="offline_fallback">网络不可用，已打开离线数据快照</string>
+    <string name="external_link_failed">无法打开外部链接</string>
+</resources>
