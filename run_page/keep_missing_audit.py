@@ -60,6 +60,13 @@ def summary_year(summary):
     return summary_utc(summary)[:4]
 
 
+def activity_start_text(value):
+    """Normalize SQLAlchemy datetimes and stored strings to UTC second text."""
+    if hasattr(value, "strftime"):
+        return value.strftime("%Y-%m-%d %H:%M:%S")
+    return str(value or "").replace("T", " ")[:19]
+
+
 def compare_activities(summaries, activities):
     by_external_id = {a.external_id: a for a in activities if a.external_id}
     by_rounded_id = {
@@ -68,7 +75,7 @@ def compare_activities(summaries, activities):
     by_signature = {}
     for activity in activities:
         signature = (
-            activity.start_date,
+            activity_start_text(activity.start_date),
             round(float(activity.distance or 0), 1),
         )
         by_signature.setdefault(signature, []).append(activity)
@@ -171,6 +178,7 @@ def main():
 
     generator = Generator(SQL_FILE)
     activities = generator.session.query(Activity).all()
+    print(f"Loaded {len(activities)} local activities from {SQL_FILE}")
     report = compare_activities(summaries, activities)
     report.update(
         {

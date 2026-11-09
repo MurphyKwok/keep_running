@@ -106,6 +106,12 @@ def get_single_run_data(session, headers, run_id, sport_type):
         return r.json()
 
 
+def keep_identifier(raw_id):
+    """Return the numeric Keep ID from summary and detail response formats."""
+    raw_id = str(raw_id)
+    return raw_id.split("_")[1] if "_" in raw_id else raw_id
+
+
 def decode_runmap_data(text, is_geo=False):
     _bytes = base64.b64decode(text)
     key = "NTZmZTU5OzgyZzpkODczYw=="
@@ -128,7 +134,7 @@ def parse_raw_data_to_nametuple(
     run_points_data = []
 
     # 5898009e387e28303988f3b7_9223370441312156007_rn middle
-    keep_id = run_data["id"].split("_")[1]
+    keep_id = keep_identifier(run_data["id"])
 
     start_time = run_data["startTime"]
     avg_heart_rate = None
@@ -155,6 +161,10 @@ def parse_raw_data_to_nametuple(
                 p["longitude"] = run_points_data[i][1]
 
         for p in run_points_data_gpx:
+            # Some Keep exports omit timestamps on a few decoded points.
+            # The location is still usable, so only skip heart-rate matching.
+            if "timestamp" not in p:
+                continue
             p_hr = find_nearest_hr(decoded_hr_data, int(p["timestamp"]), start_time)
             if p_hr:
                 p["hr"] = p_hr
@@ -222,7 +232,11 @@ def get_all_keep_tracks(
         runs = get_to_download_runs_ids(
             s, headers, api, include_doubtful=include_doubtful
         )
-        runs = [run for run in runs if run.split("_")[1] not in old_tracks_ids]
+        runs = [
+            run
+            for run in runs
+            if keep_identifier(run) not in old_tracks_ids
+        ]
         print(f"{len(runs)} new keep {api} data to generate")
         old_gpx_ids = os.listdir(GPX_FOLDER)
         old_gpx_ids = [i.split(".")[0] for i in old_gpx_ids if not i.startswith(".")]
@@ -236,7 +250,10 @@ def get_all_keep_tracks(
                 if track is not None:
                     tracks.append(track)
             except Exception as e:
-                print(f"Something wrong paring keep id {run}" + str(e))
+                print(
+                    f"Something wrong parsing keep id {run}: "
+                    f"{type(e).__name__}: {e}"
+                )
     return tracks
 
 

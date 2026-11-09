@@ -1,9 +1,11 @@
+import datetime
 import unittest
 from collections import namedtuple
 from datetime import timedelta
 import os
 import sqlite3
 import tempfile
+import types
 
 from run_page.generator import Generator
 from run_page.generator.db import Activity, update_or_create_activity
@@ -81,6 +83,35 @@ class LegacyDatabaseTests(unittest.TestCase):
             self.assertEqual(row.moving_time, timedelta(minutes=10))
             self.assertEqual(row.elapsed_time, timedelta(minutes=10))
             reopened.session.close()
+
+
+class KeepAuditComparisonTests(unittest.TestCase):
+    def test_datetime_start_matches_keep_summary_text(self):
+        from run_page.keep_missing_audit import compare_activities
+
+        activity = types.SimpleNamespace(
+            external_id=None,
+            start_date=datetime.datetime(2025, 1, 19, 0, 23, 8),
+            distance=10218.94,
+        )
+        summary = {
+            "id": "user_9223370299605225807_rn",
+            "startTime": int(
+                datetime.datetime(
+                    2025, 1, 19, 0, 23, 8, tzinfo=datetime.timezone.utc
+                ).timestamp()
+                * 1000
+            ),
+            "distance": 10218.94,
+        }
+
+        report = compare_activities([summary], [activity])
+
+        self.assertEqual(report["local_match_count"], 1)
+        self.assertEqual(report["missing_count"], 0)
+        self.assertEqual(
+            report["matched_without_exact_id"][0]["match"], "start_time_distance"
+        )
 
 
 if __name__ == "__main__":

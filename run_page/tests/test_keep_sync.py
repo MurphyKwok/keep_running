@@ -58,6 +58,43 @@ class KeepSyncTests(unittest.TestCase):
 
         self.assertEqual(keep_sync.effective_duration_seconds(run_data), 61)
 
+    def test_keep_identifier_accepts_summary_and_detail_formats(self):
+        self.assertEqual(
+            keep_sync.keep_identifier("user_9223370281897075807_rn"),
+            "9223370281897075807",
+        )
+        self.assertEqual(
+            keep_sync.keep_identifier("9223370281897075807"),
+            "9223370281897075807",
+        )
+
+    def test_parse_ignores_points_without_timestamps(self):
+        run_data = {
+            "id": "9223370288715359807",
+            "startTime": 1_747_964_726_000,
+            "endTime": 1_747_973_816_000,
+            "heartRate": {"averageHeartRate": 150, "heartRates": None},
+            "geoPoints": "encoded",
+            "dataType": "outdoorRunning",
+            "timezone": "Asia/Shanghai",
+            "distance": 27030.0,
+            "duration": 9090,
+            "region": "",
+        }
+        points = [
+            {"latitude": 30.5, "longitude": 104.0},
+            {"latitude": 30.6, "longitude": 104.1, "timestamp": 5},
+        ]
+
+        with patch("run_page.keep_sync.decode_runmap_data", return_value=points):
+            track = keep_sync.parse_raw_data_to_nametuple(
+                {"data": run_data}, [], None
+            )
+
+        self.assertIsNotNone(track)
+        self.assertEqual(track.id, 9223370288715359807)
+        self.assertEqual(track.external_id, "9223370288715359807")
+
 
 if __name__ == "__main__":
     unittest.main()
