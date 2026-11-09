@@ -34,7 +34,12 @@ class KeepSyncTests(unittest.TestCase):
     @patch("run_page.keep_sync.time.sleep")
     def test_default_sync_rejects_doubtful_activities(self, _sleep):
         session = FakeSession(
-            [page({"id": "run_valid", "isDoubtful": False}, {"id": "run_doubtful", "isDoubtful": True})]
+            [
+                page(
+                    {"id": "run_valid", "isDoubtful": False},
+                    {"id": "run_doubtful", "isDoubtful": True},
+                )
+            ]
         )
 
         run_ids = keep_sync.get_to_download_runs_ids(session, {}, "running")
@@ -44,7 +49,12 @@ class KeepSyncTests(unittest.TestCase):
     @patch("run_page.keep_sync.time.sleep")
     def test_complete_sync_can_include_doubtful_activities(self, _sleep):
         session = FakeSession(
-            [page({"id": "run_valid", "isDoubtful": False}, {"id": "run_doubtful", "isDoubtful": True})]
+            [
+                page(
+                    {"id": "run_valid", "isDoubtful": False},
+                    {"id": "run_doubtful", "isDoubtful": True},
+                )
+            ]
         )
 
         run_ids = keep_sync.get_to_download_runs_ids(
@@ -87,9 +97,7 @@ class KeepSyncTests(unittest.TestCase):
         ]
 
         with patch("run_page.keep_sync.decode_runmap_data", return_value=points):
-            track = keep_sync.parse_raw_data_to_nametuple(
-                {"data": run_data}, [], None
-            )
+            track = keep_sync.parse_raw_data_to_nametuple({"data": run_data}, [], None)
 
         self.assertIsNotNone(track)
         self.assertEqual(track.id, 9223370288715359807)

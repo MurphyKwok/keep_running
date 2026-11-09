@@ -44,8 +44,12 @@ class KeepDatabaseTests(unittest.TestCase):
         self.generator.session.close()
 
     def test_exact_external_id_is_stored_and_used_for_updates(self):
-        self.assertTrue(update_or_create_activity(self.generator.session, activity(100)))
-        self.assertFalse(update_or_create_activity(self.generator.session, activity(200)))
+        self.assertTrue(
+            update_or_create_activity(self.generator.session, activity(100))
+        )
+        self.assertFalse(
+            update_or_create_activity(self.generator.session, activity(200))
+        )
         self.generator.session.commit()
 
         rows = self.generator.session.query(Activity).all()

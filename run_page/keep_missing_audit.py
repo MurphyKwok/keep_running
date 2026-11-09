@@ -51,9 +51,7 @@ def summary_utc(summary):
         stamp = int(summary["startTime"]) / 1000
     except (KeyError, TypeError, ValueError):
         return ""
-    return datetime.fromtimestamp(stamp, tz=timezone.utc).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    return datetime.fromtimestamp(stamp, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def summary_year(summary):
@@ -69,9 +67,7 @@ def activity_start_text(value):
 
 def compare_activities(summaries, activities):
     by_external_id = {a.external_id: a for a in activities if a.external_id}
-    by_rounded_id = {
-        int(float(a.external_id)): a for a in activities if a.external_id
-    }
+    by_rounded_id = {int(float(a.external_id)): a for a in activities if a.external_id}
     by_signature = {}
     for activity in activities:
         signature = (
@@ -191,9 +187,7 @@ def main():
     if args.include_details:
         for item in report["missing"]:
             try:
-                item["detail"] = fetch_detail(
-                    session, headers, args.sport, item["id"]
-                )
+                item["detail"] = fetch_detail(session, headers, args.sport, item["id"])
             except Exception as error:  # Keep the report useful despite one bad record.
                 item["detail_error"] = str(error)
 

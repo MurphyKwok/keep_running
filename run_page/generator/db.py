@@ -217,9 +217,7 @@ def repair_legacy_intervals(engine):
                     hours=hours, minutes=minutes, seconds=seconds
                 )
                 conn.execute(
-                    text(
-                        f"UPDATE activities SET {column}=:value WHERE rowid=:rowid"
-                    ),
+                    text(f"UPDATE activities SET {column}=:value WHERE rowid=:rowid"),
                     {
                         "value": normalized.strftime("%Y-%m-%d %H:%M:%S.%f"),
                         "rowid": rowid,

@@ -12,9 +12,7 @@ from generator import Generator
 from generator.db import Activity
 
 SVG_NS = "{http://www.w3.org/2000/svg}"
-TITLE_RE = re.compile(
-    r"(?P<date>\d{4}-\d{2}-\d{2})(?:\s+(?P<distance>[0-9.]+)\s*km)?"
-)
+TITLE_RE = re.compile(r"(?P<date>\d{4}-\d{2}-\d{2})(?:\s+(?P<distance>[0-9.]+)\s*km)?")
 
 
 def exact_ids_from_svg(path):

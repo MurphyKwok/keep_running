@@ -3,6 +3,7 @@ import base64
 import json
 import os
 import time
+import traceback
 import zlib
 from collections import namedtuple
 from datetime import datetime, timedelta, timezone
@@ -50,9 +51,7 @@ def login(session, mobile, password):
         return session, headers
 
 
-def get_to_download_runs_ids(
-    session, headers, sport_type, include_doubtful=False
-):
+def get_to_download_runs_ids(session, headers, sport_type, include_doubtful=False):
     last_date = 0
     result = []
 
@@ -232,11 +231,7 @@ def get_all_keep_tracks(
         runs = get_to_download_runs_ids(
             s, headers, api, include_doubtful=include_doubtful
         )
-        runs = [
-            run
-            for run in runs
-            if keep_identifier(run) not in old_tracks_ids
-        ]
+        runs = [run for run in runs if keep_identifier(run) not in old_tracks_ids]
         print(f"{len(runs)} new keep {api} data to generate")
         old_gpx_ids = os.listdir(GPX_FOLDER)
         old_gpx_ids = [i.split(".")[0] for i in old_gpx_ids if not i.startswith(".")]
@@ -254,6 +249,7 @@ def get_all_keep_tracks(
                     f"Something wrong parsing keep id {run}: "
                     f"{type(e).__name__}: {e}"
                 )
+                traceback.print_exc()
     return tracks
 
 
