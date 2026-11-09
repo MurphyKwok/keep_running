@@ -30,6 +30,9 @@ jobs:
       - name: Build bundled application snapshot
         run: pnpm android:prepare
 
+      - name: Test frontend sync behavior
+        run: pnpm test:frontend
+
       - name: Verify Android snapshot
         run: |
           test -f android/app/src/main/assets/public/index.html

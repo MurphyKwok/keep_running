@@ -1,7 +1,7 @@
 {
   "name": "murphykwok-running-page",
   "description": "MurphyKwok 的个人跑步数据归档与可视化",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "MurphyKwok",
   "packageManager": "pnpm@8.9.0+sha256.8f5264ad1d100da11a6add6bb8a94c6f1e913f9e9261b2a551fabefad2ec0fec",
   "dependencies": {
@@ -39,7 +39,8 @@
     "lint": "eslint --ext .ts,.tsx src --fix",
     "check": "prettier --write src/main.tsx src/**/*.{css,json,ts,tsx} *.{md,yaml,json,ts,js}",
     "ci": "pnpm run check && pnpm run lint && pnpm run build",
-    "test:android": "node --test tests/android/snapshot.test.cjs"
+    "test:android": "node --test tests/android/snapshot.test.cjs",
+    "test:frontend": "node --test tests/frontend/*.test.cjs"
   },
   "engineStrict": true,
   "browserslist": "defaults, not ie 11",
