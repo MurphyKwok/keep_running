@@ -12,7 +12,7 @@ interface ISiteMetadataResult {
 const data: ISiteMetadataResult = {
   siteTitle: 'MurphyKwok 的跑步数据',
   siteUrl: 'https://murphykwok.github.io/keep_running/',
-  logo: 'https://github.com/MurphyKwok.png',
+  logo: 'https://avatars.githubusercontent.com/u/180515702?v=4',
   description: 'MurphyKwok 的个人跑步数据归档与可视化',
   navLinks: [
     {
