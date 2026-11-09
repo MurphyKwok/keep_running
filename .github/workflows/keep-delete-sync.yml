@@ -1,0 +1,105 @@
+name: Sync Keep Deletions
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: Calendar year to reconcile (leave empty for every year)
+        required: false
+        default: ''
+        type: string
+      apply:
+        description: Delete stale rows and redeploy the page
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  ATHLETE: MurphyKwok
+  TITLE: MurphyKwok Running
+  TITLE_GRID: Over 1km Runs
+  MIN_GRID_DISTANCE: 1
+
+jobs:
+  prune:
+    name: Reconcile deletions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Restore synchronized data
+        uses: actions/cache@v4
+        with:
+          path: |
+            activities
+            assets
+            GPX_OUT
+            TCX_OUT
+            FIT_OUT
+            Workouts
+            run_page/data.db
+            src/static/activities.json
+            imported.json
+          key: track_data-${{ github.sha }}-${{ github.run_id }}
+          restore-keys: |
+            track_data-${{ github.sha }}-
+            track_data-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Refresh local data from Keep
+        env:
+          KEEP_MOBILE: ${{ secrets.KEEP_MOBILE }}
+          KEEP_PASSWORD: ${{ secrets.KEEP_PASSWORD }}
+        run: |
+          python run_page/keep_sync.py "$KEEP_MOBILE" "$KEEP_PASSWORD" --with-gpx
+
+      - name: Remove activities deleted in Keep
+        env:
+          KEEP_MOBILE: ${{ secrets.KEEP_MOBILE }}
+          KEEP_PASSWORD: ${{ secrets.KEEP_PASSWORD }}
+        run: |
+          args=()
+          if [ -n "${{ inputs.year }}" ]; then
+            args+=(--year "${{ inputs.year }}")
+          fi
+          if [ "${{ inputs.apply }}" = "true" ]; then
+            args+=(--apply)
+          fi
+          python run_page/keep_prune.py "${args[@]}"
+
+      - name: Regenerate SVG assets
+        if: inputs.apply
+        run: |
+          python run_page/gen_svg.py --from-db --title "$TITLE" --type github --github-style "align-firstday" --athlete "$ATHLETE" --special-distance 10 --special-distance2 20 --special-color yellow --special-color2 red --output assets/github.svg --use-localtime --min-distance 0.5
+          python run_page/gen_svg.py --from-db --title "$TITLE_GRID" --type grid --athlete "$ATHLETE" --output assets/grid.svg --special-color yellow --special-color2 red --special-distance 20 --special-distance2 40 --use-localtime --min-distance "$MIN_GRID_DISTANCE"
+          python run_page/gen_svg.py --from-db --type circular --use-localtime
+          python run_page/gen_svg.py --from-db --year $(date +"%Y") --language zh_CN --title "$(date +"%Y") Running" --type github --github-style "align-firstday" --athlete "$ATHLETE" --special-distance 10 --special-distance2 20 --special-color yellow --special-color2 red --output assets/github_$(date +"%Y").svg --use-localtime --min-distance 0.5
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: keep-prune
+          path: keep-prune.json
+          if-no-files-found: warn
+
+  publish_github_pages:
+    name: Publish GitHub Pages
+    needs: prune
+    if: inputs.apply
+    uses: ./.github/workflows/gh-pages.yml
+    with:
+      save_data_in_github_cache: true
+      data_cache_prefix: track_data
