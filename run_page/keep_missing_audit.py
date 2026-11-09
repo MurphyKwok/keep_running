@@ -14,10 +14,11 @@ import getpass
 import json
 import os
 import time
+import types
 from datetime import datetime, timezone
 
 import requests
-from config import SQL_FILE
+from config import JSON_FILE, SQL_FILE
 from generator import Generator
 from generator.db import Activity
 from keep_sync import RUN_DATA_API, RUN_LOG_API, login
@@ -79,7 +80,8 @@ def compare_activities(summaries, activities):
     matched = []
     missing = []
     for summary in summaries:
-        run_id = str(summary.get("id", ""))
+        raw_id = str(summary.get("id", ""))
+        run_id = raw_id.split("_")[1] if "_" in raw_id else raw_id
         start = summary_utc(summary)
         distance = round(float(summary.get("distance") or 0), 1)
         activity = by_external_id.get(run_id)
@@ -93,14 +95,24 @@ def compare_activities(summaries, activities):
 
         if not activity:
             try:
-                activity = by_rounded_id.get(int(float(run_id)))
+                rounded_id = int(float(run_id))
+                activity = by_rounded_id.get(rounded_id)
+                if not activity:
+                    activity = next(
+                        (
+                            item
+                            for item in activities
+                            if getattr(item, "run_id", None) == rounded_id
+                        ),
+                        None,
+                    )
             except (TypeError, ValueError, OverflowError):
                 pass
             if activity:
                 match_type = "javascript_rounded_id"
 
         record = {
-            "id": run_id,
+            "id": raw_id,
             "start_utc": start,
             "data_type": summary.get("dataType"),
             "distance_m": summary.get("distance"),
@@ -172,9 +184,20 @@ def main():
     if args.year:
         summaries = [item for item in summaries if summary_year(item) == str(args.year)]
 
-    generator = Generator(SQL_FILE)
-    activities = generator.session.query(Activity).all()
-    print(f"Loaded {len(activities)} local activities from {SQL_FILE}")
+    if os.path.exists(JSON_FILE):
+        # Audit the dataset that the page actually renders. Its numeric IDs
+        # have already passed through JavaScript, so the rounded-ID fallback
+        # below is required for older rows.
+        with open(JSON_FILE, encoding="utf-8") as handle:
+            published = json.load(handle)
+        activities = [types.SimpleNamespace(**row) for row in published]
+        for activity in activities:
+            activity.external_id = getattr(activity, "external_id", None)
+        print(f"Loaded {len(activities)} published activities from {JSON_FILE}")
+    else:
+        generator = Generator(SQL_FILE)
+        activities = generator.session.query(Activity).all()
+        print(f"Loaded {len(activities)} local activities from {SQL_FILE}")
     report = compare_activities(summaries, activities)
     report.update(
         {

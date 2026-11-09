@@ -116,6 +116,34 @@ class KeepAuditComparisonTests(unittest.TestCase):
             report["matched_without_exact_id"][0]["match"], "start_time_distance"
         )
 
+    def test_rounded_javascript_id_matches_published_record(self):
+        from run_page.keep_missing_audit import compare_activities
+
+        activity = types.SimpleNamespace(
+            run_id=float("9223370281897076000"),
+            external_id=None,
+            start_date="2025-08-12 00:07:01",
+            distance=1229.1887,
+        )
+        summary = {
+            "id": "user_9223370281897075807_rn",
+            "startTime": int(
+                datetime.datetime(
+                    2025, 8, 12, 0, 7, 0, tzinfo=datetime.timezone.utc
+                ).timestamp()
+                * 1000
+            ),
+            "distance": 1229.1887,
+        }
+
+        report = compare_activities([summary], [activity])
+
+        self.assertEqual(report["missing_count"], 0)
+        self.assertEqual(
+            report["matched_without_exact_id"][0]["match"],
+            "javascript_rounded_id",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
