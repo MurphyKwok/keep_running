@@ -1,5 +1,6 @@
 const activities = require('../../data/activities');
-const { decode, bounds } = require('../../utils/polyline');
+const { decodeMapPoints } = require('../../utils/coords');
+const { bounds } = require('../../utils/polyline');
 const { toSeconds, pace, duration, dateText } = require('../../utils/format');
 
 function findActivity(id) {
@@ -7,7 +8,7 @@ function findActivity(id) {
 }
 
 function createMap(rawPolyline) {
-  const points = decode(rawPolyline);
+  const points = decodeMapPoints(rawPolyline);
   if (points.length < 2) {
     return {
       available: false,
@@ -56,7 +57,7 @@ Page({
 
     const distanceKm = Number(item.d || 0) / 1000;
     const seconds = toSeconds(item.t);
-    const points = decode(item.p);
+    const points = decodeMapPoints(item.p);
     const activity = {
       date: dateText(item.s),
       city: item.c || '地点未记录',

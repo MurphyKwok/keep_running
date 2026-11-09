@@ -1,5 +1,6 @@
 const activities = require('../../data/activities');
-const { decode, simplify } = require('../../utils/polyline');
+const { decodeMapPoints } = require('../../utils/coords');
+const { simplify } = require('../../utils/polyline');
 const { toSeconds, pace, duration, dateText } = require('../../utils/format');
 
 const PAGE_SIZE = 30;
@@ -60,7 +61,7 @@ function buildMap(items, yearLabel) {
   const groups = {};
 
   traces.forEach((item) => {
-    let points = decode(item.p);
+    let points = decodeMapPoints(item.p);
     if (points.length < 2) {
       return;
     }

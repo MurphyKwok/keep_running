@@ -39,6 +39,8 @@ python3 run_page/generate_miniprogram_data.py --simplify-meters 1
 - 单次距离、用时、配速、心率、日期、城市和 GPS 点数
 - 无 GPS 记录会显示明确占位
 
+活动数据继续以 WGS-84 保存；小程序在地图渲染和边界计算前转换为 GCJ-02，以匹配微信原生地图。可在仓库根目录运行 `node --test tests/miniprogram/coords.test.cjs` 检查网页与小程序共用的数据和转换结果。
+
 当前 `activities.json` 的 Keep 聚合数据没有热量、步频和步数，因此详情页对应位置显示 `--`。生成脚本已经支持这三个可选字段；以后上游数据出现 `calories`、`average_cadence` 或 `step_count` 时，会一并写入小程序数据。
 
 ## 隐私与发布
