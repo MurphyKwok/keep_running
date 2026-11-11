@@ -59,4 +59,12 @@ export function workflowProgress(
 export function shouldRefreshAfterSync(progress: WorkflowProgress): boolean;
 
 export function androidAppVersion(userAgent: string): string;
+export interface SyncClient {
+  kind: 'web' | 'android';
+  label: string;
+  appVersion: string;
+}
+
+export function resolveSyncClient(userAgent: string): SyncClient;
+
 export function isAndroidApp(userAgent: string): boolean;

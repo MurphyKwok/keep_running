@@ -114,6 +114,21 @@ export function androidAppVersion(userAgent) {
   return match?.[1] ?? '';
 }
 
+export function resolveSyncClient(userAgent) {
+  const appVersion = androidAppVersion(userAgent);
+  return appVersion
+    ? {
+        kind: 'android',
+        label: `APK v${appVersion}`,
+        appVersion,
+      }
+    : {
+        kind: 'web',
+        label: 'Web',
+        appVersion: '',
+      };
+}
+
 export function isResumableSyncSession(session) {
   if (!session || typeof session !== 'object') {
     return false;

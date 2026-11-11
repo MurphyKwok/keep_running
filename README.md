@@ -14,9 +14,9 @@ gradle -p android testDebugUnitTest assembleDebug
 
 The installable file is `android/app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions also builds it through the `Build Android APK` workflow and uploads the `keep-running-debug-apk` artifact. A debug-signed APK can be installed directly by allowing installs from the browser or file manager. Later versions must use the same signing key to update it in place.
 
-### Run Data Sync in the APK
+### Run Data Sync in the Running Page and APK
 
-The APK adds a **Run Data Sync** button beside the avatar. It starts `.github/workflows/run_data_sync.yml`, shows the current GitHub Actions job and completed-step progress, and reloads the page after the workflow and GitHub Pages deployment succeed. If the workflow fails, the progress panel keeps the diagnostic information and waits for you to retry.
+The Running Page and APK add a **Run Data Sync** button beside the avatar. It starts `.github/workflows/run_data_sync.yml`, shows the current GitHub Actions job and completed-step progress, and reloads the page after the workflow and GitHub Pages deployment succeed. If the workflow fails, the progress panel keeps the diagnostic information and waits for you to retry. The website labels this control as **Web**; the APK displays its installed version.
 
 On first use, create a [fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new) with:
 
@@ -24,7 +24,7 @@ On first use, create a [fine-grained GitHub token](https://github.com/settings/p
 - **Actions: Read and write** permission
 - A short expiration date
 
-The token is stored only in this APK's WebView local storage and is sent only to `api.github.com` when starting or checking the workflow. It is not bundled in the APK or committed to the repository. Use **更换访问令牌** in the progress panel if the token expires or needs to be replaced.
+The token is stored only in the current browser or APK WebView local storage and is sent only to `api.github.com` when starting or checking the workflow. It is not bundled in the website or APK and is never committed to the repository. Use **更换访问令牌** in the progress panel if the token expires or needs to be replaced.
 
 1. clone or Fork before vercel 404 need to pull the latest code
 2. python3(python) in README means python3 python

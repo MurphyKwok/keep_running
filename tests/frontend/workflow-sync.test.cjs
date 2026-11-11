@@ -224,14 +224,22 @@ test('never refreshes the page after a failed workflow', async () => {
   assert.equal(shouldRefreshAfterSync(progress), false);
 });
 
-test('shows the sync control only inside the Android WebView', async () => {
-  const { isAndroidApp } = await import(modulePath);
+test('enables the sync control for both websites and Android WebView', async () => {
+  const { resolveSyncClient } = await import(modulePath);
 
-  assert.equal(
-    isAndroidApp('Mozilla/5.0 Android 15 KeepRunningAndroid/1.0.0'),
-    true
+  assert.deepEqual(resolveSyncClient('Mozilla/5.0 Chrome/140'), {
+    kind: 'web',
+    label: 'Web',
+    appVersion: '',
+  });
+  assert.deepEqual(
+    resolveSyncClient('Mozilla/5.0 Android 15 KeepRunningAndroid/1.0.4'),
+    {
+      kind: 'android',
+      label: 'APK v1.0.4',
+      appVersion: '1.0.4',
+    }
   );
-  assert.equal(isAndroidApp('Mozilla/5.0 Chrome/140'), false);
 });
 
 test('shows the installed APK version in the sync diagnostics', async () => {

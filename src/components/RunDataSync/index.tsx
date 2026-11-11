@@ -1,14 +1,13 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import {
-  androidAppVersion,
   dispatchWorkflow,
   findDispatchedRun,
   formatSyncError,
   getLatestWorkflowDispatchRun,
   getWorkflowJobs,
   getWorkflowRun,
-  isAndroidApp,
   isResumableSyncSession,
+  resolveSyncClient,
   shouldRefreshAfterSync,
   workflowProgress,
 } from '@/utils/workflowSync.mjs';
@@ -99,8 +98,7 @@ function writeStoredSession(session: SyncSession | null) {
 }
 
 const RunDataSync = () => {
-  const [enabled] = useState(() => isAndroidApp(navigator.userAgent));
-  const [appVersion] = useState(() => androidAppVersion(navigator.userAgent));
+  const [syncClient] = useState(() => resolveSyncClient(navigator.userAgent));
   const [token, setToken] = useState(readStoredToken);
   const [session, setSession] = useState<SyncSession | null>(readStoredSession);
   const [progress, setProgress] = useState<SyncProgress>(emptyProgress);
@@ -197,10 +195,6 @@ const RunDataSync = () => {
     }, 1200);
     return () => clearTimeout(timer);
   }, [progress]);
-
-  if (!enabled) {
-    return null;
-  }
 
   const busy = progress.phase === 'queued' || progress.phase === 'running';
   const finished = progress.phase === 'success' || progress.phase === 'failed';
@@ -328,8 +322,7 @@ const RunDataSync = () => {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-600">
-                GitHub Actions
-                {appVersion ? ` · APK v${appVersion}` : ''}
+                GitHub Actions · {syncClient.label}
               </p>
               <h2 id="sync-panel-title" className="mt-1 text-xl font-extrabold">
                 Run Data Sync
@@ -425,8 +418,8 @@ const RunDataSync = () => {
             </p>
             <h2 className="mt-2 text-2xl font-extrabold">连接 GitHub</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              首次使用需要你的 GitHub 细粒度访问令牌。令牌只保存在此设备的 APK
-              数据中，不会写入仓库或 APK 安装包。
+              首次使用需要你的 GitHub 细粒度访问令牌。令牌只保存在当前浏览器或
+              APK 的本地存储中，不会写入仓库或公开页面。
             </p>
             <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm leading-6 text-slate-600">
               <li>创建仅授权 keep_running 仓库的细粒度令牌。</li>
