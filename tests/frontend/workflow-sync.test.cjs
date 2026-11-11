@@ -70,9 +70,9 @@ test('captures the latest dispatched run from the workflow-specific endpoint wit
 
   assert.equal(run.id, 31);
   assert.equal(calls.length, 1);
-  assert.equal(
+  assert.match(
     calls[0].url,
-    'https://api.github.com/repos/MurphyKwok/keep_running/actions/workflows/run_data_sync.yml/runs?branch=main&event=workflow_dispatch&per_page=20'
+    /^https:\/\/api\.github\.com\/repos\/MurphyKwok\/keep_running\/actions\/workflows\/run_data_sync\.yml\/runs\?branch=main&event=workflow_dispatch&per_page=20&cacheBust=\d+$/
   );
   assert.equal(calls[0].init.cache, 'no-store');
 });
@@ -106,11 +106,26 @@ test('finds the new run by ID even when GitHub created it before the client reco
   const run = await findDispatchedRun('fine-grained-token', 32, fetchImpl);
 
   assert.equal(run.id, 34);
-  assert.equal(
+  assert.match(
     calls[0].url,
-    'https://api.github.com/repos/MurphyKwok/keep_running/actions/workflows/run_data_sync.yml/runs?branch=main&event=workflow_dispatch&per_page=20'
+    /^https:\/\/api\.github\.com\/repos\/MurphyKwok\/keep_running\/actions\/workflows\/run_data_sync\.yml\/runs\?branch=main&event=workflow_dispatch&per_page=20&cacheBust=\d+$/
   );
   assert.equal(calls[0].init.cache, 'no-store');
+});
+
+test('uses a unique URL and no-cache headers when polling GitHub runs', async () => {
+  const { findDispatchedRun } = await import(modulePath);
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    return response(200, { workflow_runs: [] });
+  };
+
+  await findDispatchedRun('fine-grained-token', 32, fetchImpl);
+
+  assert.match(calls[0].url, /[?&]cacheBust=\d+/);
+  assert.equal(calls[0].init.headers['Cache-Control'], 'no-cache');
+  assert.equal(calls[0].init.headers.Pragma, 'no-cache');
 });
 
 test('drops a legacy queued session that has neither a run nor a baseline ID', async () => {
@@ -217,6 +232,16 @@ test('shows the sync control only inside the Android WebView', async () => {
     true
   );
   assert.equal(isAndroidApp('Mozilla/5.0 Chrome/140'), false);
+});
+
+test('shows the installed APK version in the sync diagnostics', async () => {
+  const { androidAppVersion } = await import(modulePath);
+
+  assert.equal(
+    androidAppVersion('Mozilla/5.0 Android 15 KeepRunningAndroid/1.0.4'),
+    '1.0.4'
+  );
+  assert.equal(androidAppVersion('Mozilla/5.0 Chrome/140'), '');
 });
 
 test('turns a network failure into an actionable message for the APK user', async () => {

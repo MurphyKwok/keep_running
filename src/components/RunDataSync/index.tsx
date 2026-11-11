@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import {
+  androidAppVersion,
   dispatchWorkflow,
   findDispatchedRun,
   formatSyncError,
@@ -99,6 +100,7 @@ function writeStoredSession(session: SyncSession | null) {
 
 const RunDataSync = () => {
   const [enabled] = useState(() => isAndroidApp(navigator.userAgent));
+  const [appVersion] = useState(() => androidAppVersion(navigator.userAgent));
   const [token, setToken] = useState(readStoredToken);
   const [session, setSession] = useState<SyncSession | null>(readStoredSession);
   const [progress, setProgress] = useState<SyncProgress>(emptyProgress);
@@ -116,6 +118,7 @@ const RunDataSync = () => {
     let disposed = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let currentRunId = session.runId;
+    let discoveryAttempts = 0;
 
     const poll = async () => {
       try {
@@ -125,13 +128,14 @@ const RunDataSync = () => {
         } else {
           run = await findDispatchedRun(token, session.baselineRunId ?? 0);
           if (!run) {
+            discoveryAttempts += 1;
             if (!disposed) {
               setProgress({
                 ...emptyProgress,
                 phase: 'queued',
                 percent: 3,
                 runStatus: 'queued',
-                stepName: 'GitHub 正在创建同步任务',
+                stepName: `已检查 ${discoveryAttempts} 次，等待 GitHub 创建任务（基准 #${session.baselineRunId ?? 0}）`,
               });
               setError('');
               timer = setTimeout(poll, POLL_INTERVAL_MS);
@@ -325,6 +329,7 @@ const RunDataSync = () => {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-600">
                 GitHub Actions
+                {appVersion ? ` · APK v${appVersion}` : ''}
               </p>
               <h2 id="sync-panel-title" className="mt-1 text-xl font-extrabold">
                 Run Data Sync

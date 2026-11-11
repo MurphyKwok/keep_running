@@ -15,6 +15,8 @@ function headers(token) {
     Authorization: `Bearer ${token}`,
     'X-GitHub-Api-Version': API_VERSION,
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
   };
 }
 
@@ -77,7 +79,7 @@ export function formatSyncError(error) {
 
 async function getRecentWorkflowDispatchRuns(token, fetchImpl) {
   const payload = await githubRequest(
-    `${WORKFLOW_RUNS_PATH}?${DISPATCH_RUNS_QUERY}`,
+    `${WORKFLOW_RUNS_PATH}?${DISPATCH_RUNS_QUERY}&cacheBust=${Date.now()}`,
     token,
     {},
     fetchImpl
@@ -103,6 +105,13 @@ export async function findDispatchedRun(
       .filter((run) => Number.isFinite(run.id) && run.id > baselineRunId)
       .sort((left, right) => right.id - left.id)[0] ?? null
   );
+}
+
+export function androidAppVersion(userAgent) {
+  const match = String(userAgent ?? '').match(
+    /KeepRunningAndroid\/(\d+(?:\.\d+)*)/i
+  );
+  return match?.[1] ?? '';
 }
 
 export function isResumableSyncSession(session) {

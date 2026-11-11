@@ -58,4 +58,5 @@ export function workflowProgress(
 
 export function shouldRefreshAfterSync(progress: WorkflowProgress): boolean;
 
+export function androidAppVersion(userAgent: string): string;
 export function isAndroidApp(userAgent: string): boolean;

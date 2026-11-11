@@ -91,7 +91,7 @@ public final class MainActivity extends Activity {
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setUserAgentString(
-            settings.getUserAgentString() + " KeepRunningAndroid/1.0.3"
+            settings.getUserAgentString() + " KeepRunningAndroid/1.0.4"
         );
 
         WebViewAssetLoader.AssetsPathHandler assetHandler =
