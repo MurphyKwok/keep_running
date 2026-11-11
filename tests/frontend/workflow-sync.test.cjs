@@ -37,36 +37,107 @@ test('dispatches only the configured Run Data Sync workflow on main', async () =
   assert.deepEqual(JSON.parse(calls[0].init.body), { ref: 'main' });
 });
 
-test('finds the newly dispatched run without selecting scheduled or older runs', async () => {
-  const { findDispatchedRun } = await import(modulePath);
-  const fetchImpl = async () =>
-    response(200, {
+test('captures the latest dispatched run from the workflow-specific endpoint without cached data', async () => {
+  const { getLatestWorkflowDispatchRun } = await import(modulePath);
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    return response(200, {
       workflow_runs: [
         {
-          id: 30,
+          id: 32,
           event: 'schedule',
           created_at: '2026-11-09T12:00:02Z',
-        },
-        {
-          id: 29,
-          event: 'workflow_dispatch',
-          created_at: '2026-11-09T11:59:00Z',
         },
         {
           id: 31,
           event: 'workflow_dispatch',
           created_at: '2026-11-09T12:00:01Z',
         },
+        {
+          id: 30,
+          event: 'workflow_dispatch',
+          created_at: '2026-11-09T11:59:00Z',
+        },
       ],
     });
+  };
 
-  const run = await findDispatchedRun(
+  const run = await getLatestWorkflowDispatchRun(
     'fine-grained-token',
-    '2026-11-09T12:00:00Z',
     fetchImpl
   );
 
   assert.equal(run.id, 31);
+  assert.equal(calls.length, 1);
+  assert.equal(
+    calls[0].url,
+    'https://api.github.com/repos/MurphyKwok/keep_running/actions/workflows/run_data_sync.yml/runs?branch=main&event=workflow_dispatch&per_page=20'
+  );
+  assert.equal(calls[0].init.cache, 'no-store');
+});
+
+test('finds the new run by ID even when GitHub created it before the client recorded a timestamp', async () => {
+  const { findDispatchedRun } = await import(modulePath);
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    return response(200, {
+      workflow_runs: [
+        {
+          id: 34,
+          event: 'workflow_dispatch',
+          created_at: '2026-11-09T12:00:00Z',
+        },
+        {
+          id: 33,
+          event: 'schedule',
+          created_at: '2026-11-09T12:00:03Z',
+        },
+        {
+          id: 32,
+          event: 'workflow_dispatch',
+          created_at: '2026-11-09T11:59:00Z',
+        },
+      ],
+    });
+  };
+
+  const run = await findDispatchedRun('fine-grained-token', 32, fetchImpl);
+
+  assert.equal(run.id, 34);
+  assert.equal(
+    calls[0].url,
+    'https://api.github.com/repos/MurphyKwok/keep_running/actions/workflows/run_data_sync.yml/runs?branch=main&event=workflow_dispatch&per_page=20'
+  );
+  assert.equal(calls[0].init.cache, 'no-store');
+});
+
+test('drops a legacy queued session that has neither a run nor a baseline ID', async () => {
+  const { isResumableSyncSession } = await import(modulePath);
+
+  assert.equal(
+    isResumableSyncSession({
+      requestedAt: '2026-11-09T12:00:00Z',
+      runId: null,
+    }),
+    false
+  );
+  assert.equal(
+    isResumableSyncSession({
+      requestedAt: '2026-11-09T12:00:00Z',
+      baselineRunId: 31,
+      runId: null,
+    }),
+    true
+  );
+  assert.equal(
+    isResumableSyncSession({
+      requestedAt: '2026-11-09T12:00:00Z',
+      runId: 32,
+    }),
+    true
+  );
 });
 
 test('reports completed workflow steps and the active job and step', async () => {

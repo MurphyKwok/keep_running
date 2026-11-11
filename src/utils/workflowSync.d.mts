@@ -26,11 +26,18 @@ export function dispatchWorkflow(
 
 export function formatSyncError(error: unknown): string;
 
-export function findDispatchedRun(
+export function getLatestWorkflowDispatchRun(
   token: string,
-  requestedAt: string,
   fetchImpl?: typeof fetch
 ): Promise<WorkflowRun | null>;
+
+export function findDispatchedRun(
+  token: string,
+  baselineRunId: number,
+  fetchImpl?: typeof fetch
+): Promise<WorkflowRun | null>;
+
+export function isResumableSyncSession(session: unknown): boolean;
 
 export function getWorkflowRun(
   token: string,

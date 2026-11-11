@@ -6,6 +6,8 @@ const WORKFLOW_REF = 'main';
 const API_VERSION = '2022-11-28';
 const DISPATCH_PATH = `/repos/${OWNER}/${REPOSITORY}/actions/workflows/${WORKFLOW_FILE}/dispatches`;
 const RUNS_PATH = `/repos/${OWNER}/${REPOSITORY}/actions/runs`;
+const WORKFLOW_RUNS_PATH = `/repos/${OWNER}/${REPOSITORY}/actions/workflows/${WORKFLOW_FILE}/runs`;
+const DISPATCH_RUNS_QUERY = `branch=${WORKFLOW_REF}&event=workflow_dispatch&per_page=20`;
 
 function headers(token) {
   return {
@@ -19,6 +21,7 @@ function headers(token) {
 async function githubRequest(path, token, init, fetchImpl) {
   const response = await fetchImpl(`${API_ROOT}${path}`, {
     ...init,
+    cache: 'no-store',
     headers: headers(token),
   });
   if (!response.ok) {
@@ -72,24 +75,43 @@ export function formatSyncError(error) {
   return '同步请求失败，请稍后重试。';
 }
 
-export async function findDispatchedRun(token, requestedAt, fetchImpl = fetch) {
+async function getRecentWorkflowDispatchRuns(token, fetchImpl) {
   const payload = await githubRequest(
-    `${RUNS_PATH}?event=workflow_dispatch&branch=${WORKFLOW_REF}&per_page=20`,
+    `${WORKFLOW_RUNS_PATH}?${DISPATCH_RUNS_QUERY}`,
     token,
     {},
     fetchImpl
   );
-  const requestedAtMs = Date.parse(requestedAt);
+  return (payload.workflow_runs ?? []).filter(
+    (run) => run.event === 'workflow_dispatch'
+  );
+}
+
+export async function getLatestWorkflowDispatchRun(token, fetchImpl = fetch) {
+  const runs = await getRecentWorkflowDispatchRuns(token, fetchImpl);
+  return runs.sort((left, right) => right.id - left.id)[0] ?? null;
+}
+
+export async function findDispatchedRun(
+  token,
+  baselineRunId,
+  fetchImpl = fetch
+) {
+  const runs = await getRecentWorkflowDispatchRuns(token, fetchImpl);
   return (
-    payload.workflow_runs
-      .filter((run) => {
-        return (
-          run.event === 'workflow_dispatch' &&
-          Number.isFinite(Date.parse(run.created_at)) &&
-          Date.parse(run.created_at) >= requestedAtMs
-        );
-      })
+    runs
+      .filter((run) => Number.isFinite(run.id) && run.id > baselineRunId)
       .sort((left, right) => right.id - left.id)[0] ?? null
+  );
+}
+
+export function isResumableSyncSession(session) {
+  if (!session || typeof session !== 'object') {
+    return false;
+  }
+  return (
+    (Number.isInteger(session.runId) && session.runId > 0) ||
+    (Number.isInteger(session.baselineRunId) && session.baselineRunId >= 0)
   );
 }
 

@@ -3,9 +3,11 @@ import {
   dispatchWorkflow,
   findDispatchedRun,
   formatSyncError,
+  getLatestWorkflowDispatchRun,
   getWorkflowJobs,
   getWorkflowRun,
   isAndroidApp,
+  isResumableSyncSession,
   shouldRefreshAfterSync,
   workflowProgress,
 } from '@/utils/workflowSync.mjs';
@@ -16,6 +18,7 @@ const POLL_INTERVAL_MS = 5000;
 
 interface SyncSession {
   requestedAt: string;
+  baselineRunId?: number | null;
   runId: number | null;
 }
 
@@ -68,7 +71,7 @@ function readStoredSession(): SyncSession | null {
       return null;
     }
     const parsed = JSON.parse(raw) as SyncSession;
-    return parsed.requestedAt ? parsed : null;
+    return isResumableSyncSession(parsed) ? parsed : null;
   } catch {
     return null;
   }
@@ -120,7 +123,7 @@ const RunDataSync = () => {
         if (currentRunId) {
           run = await getWorkflowRun(token, currentRunId);
         } else {
-          run = await findDispatchedRun(token, session.requestedAt);
+          run = await findDispatchedRun(token, session.baselineRunId ?? 0);
           if (!run) {
             if (!disposed) {
               setProgress({
@@ -176,7 +179,7 @@ const RunDataSync = () => {
         clearTimeout(timer);
       }
     };
-  }, [session?.requestedAt, token]);
+  }, [session?.baselineRunId, token]);
 
   useEffect(() => {
     if (!shouldRefreshAfterSync(progress)) {
@@ -220,9 +223,11 @@ const RunDataSync = () => {
       stepName: '正在提交同步任务',
     });
     try {
+      const latestRun = await getLatestWorkflowDispatchRun(activeToken);
       await dispatchWorkflow(activeToken);
       const nextSession = {
         requestedAt: new Date().toISOString(),
+        baselineRunId: latestRun?.id ?? 0,
         runId: null,
       };
       setSession(nextSession);
