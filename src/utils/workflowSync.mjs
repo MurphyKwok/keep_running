@@ -15,8 +15,6 @@ function headers(token) {
     Authorization: `Bearer ${token}`,
     'X-GitHub-Api-Version': API_VERSION,
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache',
-    Pragma: 'no-cache',
   };
 }
 

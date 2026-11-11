@@ -113,7 +113,7 @@ test('finds the new run by ID even when GitHub created it before the client reco
   assert.equal(calls[0].init.cache, 'no-store');
 });
 
-test('uses a unique URL and no-cache headers when polling GitHub runs', async () => {
+test('uses a unique URL with headers allowed by GitHub CORS when polling runs', async () => {
   const { findDispatchedRun } = await import(modulePath);
   const calls = [];
   const fetchImpl = async (url, init) => {
@@ -124,8 +124,8 @@ test('uses a unique URL and no-cache headers when polling GitHub runs', async ()
   await findDispatchedRun('fine-grained-token', 32, fetchImpl);
 
   assert.match(calls[0].url, /[?&]cacheBust=\d+/);
-  assert.equal(calls[0].init.headers['Cache-Control'], 'no-cache');
-  assert.equal(calls[0].init.headers.Pragma, 'no-cache');
+  assert.equal(calls[0].init.headers['Cache-Control'], undefined);
+  assert.equal(calls[0].init.headers.Pragma, undefined);
 });
 
 test('drops a legacy queued session that has neither a run nor a baseline ID', async () => {

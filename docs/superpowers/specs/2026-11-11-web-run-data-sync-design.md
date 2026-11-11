@@ -16,7 +16,7 @@ The control appears beside the site avatar on every supported client. A browser 
 
 1. Read the latest dispatch run ID from `run_data_sync.yml` as a baseline.
 2. Dispatch the workflow on `main`.
-3. Poll the workflow-specific runs endpoint every five seconds with a unique cache-busting URL and no-cache headers.
+3. Poll the workflow-specific runs endpoint every five seconds with a unique cache-busting URL. The website does not send `Cache-Control` or `Pragma` because GitHub CORS does not allow those headers.
 4. Select the newest `workflow_dispatch` run with an ID greater than the baseline.
 5. Read that run and its jobs, render progress, and refresh after success.
 
